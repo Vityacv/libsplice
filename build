@@ -1,0 +1,59 @@
+#!/bin/sh
+cppcomp32=i686-w64-mingw32-g++
+cppcomp64=x86_64-w64-mingw32-g++
+amd64=0
+if [[ $amd64 != 0 ]];then
+    bits=64
+    cppcomp=$cppcomp64
+    asmformat=elf64
+    entry="entry"
+    imagebase=0x000000100000000
+else
+    bits=32
+    cppcomp=$cppcomp32
+    asmformat=elf
+    entry="_entry"
+    imagebase=0x10000000
+fi
+masmcomp=jwasm
+subdir=`dirname $PWD`
+#-fpermissive  -Wno-deprecated  -Wl,-static -static -static-libgcc -static-libstdc++ 
+
+
+cfexecutable=" -D_MSC_VER=1200 -D_UNICODE -DUNICODE -masm=intel -mconsole -mwindows -municode -s -O2 -fno-ident -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -mno-stack-arg-probe -Wl,-disable-runtime-pseudo-reloc,--major-os-version,6,--minor-os-version,0,--major-image-version,6,--minor-image-versio,0,--major-subsystem-version,6,--minor-subsystem-version,0,-image-base=$imagebase,-nxcompat,-e$entry -nostdlib"
+
+
+cfsharedlibs=" -lmsvcrt -lmingwex -lmingw32 -lkernel32 -luser32 -lgdi32 -lpsapi -lwinmm -ldbghelp -lshell32 -lws2_32 -lwinpthread -lgcc -lgcc_eh "
+
+# -static-libgcc -static-libstdc++ 
+obj=$PWD/obj
+src=$PWD
+for i in "$@"
+do
+case $i in
+    -c|-clean)
+    
+	echo "generating pch.h.gch"
+    $cppcomp $cfshared -x c++-header -o pch.h.gch -c pch.cpp
+
+    cd $obj
+    $cppcomp -c $src/splice.c $src/splicealloc.c $src/dizahex.c $cfexecutable
+    ;;
+    *)
+            # unknown option
+    ;;
+esac
+done
+
+
+
+
+#if [ ! -f pch.h.gch ]; then
+
+#fi
+cd $obj
+nasm -f $asmformat $src/tramp.asm -o $obj/tramp.o
+#$masmcomp -$asmformat $src/trampmasm.asm 
+#mv trampmasm.o tramp.o
+cd $src
+$cppcomp -o splice$bits.exe $cfexecutable main.cpp $obj/splice.o $obj/tramp.o $obj/dizahex.o $obj/splicealloc.o -luser32 -lkernel32 -lmsvcrt -lpsapi -lmingw32
