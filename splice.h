@@ -52,6 +52,7 @@ struct tramp {
   unsigned char *hookPoint; //point of hook
   unsigned char *hookFunc; //function to execute
   unsigned char *origFunc; //need for custom codebuf
+  unsigned origProtect; //original protection of page
   unsigned char codebuf[24]; //code buffer containing original code in most cases
 #if defined _M_X64
   unsigned char jmpbuf[24]; //buffer of jump to hook function
@@ -68,7 +69,9 @@ unsigned char __fastcall spliceDown(void *);
 void __fastcall freeSplice();
 ptramp __fastcall getTramp(void *);
 unsigned __fastcall getTrampCount();
-
+uint32_t __fastcall getOpcodeLen(void *adr);
+unsigned char __fastcall checkHookPoint(unsigned char *orig, ptramp pt,
+                                        unsigned char *hookPoint);
 #define getVal4FromRel(x) (unsigned char *)x+(*(uintptr_t *)((unsigned char *)x))+4
 #define getRel4FromVal(x,y) ((unsigned char *)y-(unsigned char *)x)-4
 #ifdef __cplusplus

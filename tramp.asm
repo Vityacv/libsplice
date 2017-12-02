@@ -67,6 +67,7 @@ struc tramp
 	.hookPoint rest 1
 	.hookFunc rest 1
 	.origFunc rest 1
+	.origProtect resd 1
 	.codebuf resb 24
 	%ifdef _M_X64
 	.jmpbuf resb 24

@@ -27,8 +27,7 @@ ptramp createTramp(unsigned char *hookPoint) {
   pt = (ptramp)AllocateBuffer(hookPoint);
   if (!pt) return nullptr;
   {
-    uint32_t old;
-    if(!VirtualProtect((void *)hookPoint, 5, PAGE_EXECUTE_READWRITE, (LPDWORD)&old))
+    if(!VirtualProtect((void *)hookPoint, 32, PAGE_EXECUTE_READWRITE, (LPDWORD)&pt->origProtect))
     	return nullptr;
   }
   pt->hookPoint = hookPoint;
@@ -187,6 +186,8 @@ unsigned char __fastcall spliceUp(void *hookPoint, void *hookFunc) {
 #endif
   *(unsigned char *)(hookPoint) = 0xE8;
   *(unsigned *)((unsigned char *)hookPoint + 1) = rel32;
+  uintptr_t oldProtect;
+  VirtualProtect((void *)hookPoint, 32, pt->origProtect, (LPDWORD)&oldProtect);
 }
 unsigned char __fastcall spliceDown(void * hookPoint) {
   ptramp pt = getTramp(hookPoint);
@@ -195,6 +196,8 @@ unsigned char __fastcall spliceDown(void * hookPoint) {
   if(IsExecutableAddress((void *)hookPoint)){
     checkHookPoint((unsigned char*)hookPoint, pt,(unsigned char*)pt->codebuf);
     memcpy(hookPoint, pt->codebuf, pt->origLen);
+    uintptr_t oldProtect;
+    VirtualProtect((void *)hookPoint, 32, pt->origProtect, (LPDWORD)&oldProtect);
   }
   freeTramp(hookPoint);
   return TRUE;
