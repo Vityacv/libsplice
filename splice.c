@@ -143,6 +143,8 @@ unsigned char __fastcall checkHookPoint(unsigned char *orig, ptramp pt,
 
 unsigned char __fastcall spliceUp(void *hookPoint, void *hookFunc) {
   if (!hookPoint) return 0;
+  if(getTramp(hookPoint))
+    return 0;
   ptramp pt = createTramp((unsigned char *)hookPoint);
   if (!pt) return 0;
   if (!checkHookPoint(0, pt, (unsigned char *)hookPoint)) {
