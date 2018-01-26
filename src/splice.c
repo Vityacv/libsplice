@@ -8,8 +8,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 ptramp trampGlobal;
 void __cdecl trampoline();
 uint32_t __fastcall getOpcodeLen(void *adr) {

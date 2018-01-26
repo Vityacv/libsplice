@@ -8,7 +8,7 @@ typedef struct tramp *ptramp;
 struct reg {
 	uintptr_t origFunc;
 	ptramp pt;
-	uintptr_t state;
+	unsigned char state;
 	uintptr_t argcnt;
 	uintptr_t tflags;
 #ifdef _M_X64
