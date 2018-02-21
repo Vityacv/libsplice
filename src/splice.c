@@ -179,7 +179,7 @@ unsigned char __fastcall spliceUp(void *hookPoint, void *hookFunc) {
 #if defined _M_X64
   rel32 = (((PBYTE)pt->jmpbuf - (PBYTE)hookPoint) - 5);
   *(unsigned*)(pt->jmpbuf)=0x58d4850;
-  *(unsigned*)(pt->jmpbuf+4)=0xFFFFFFC8;//-0x38
+  *(unsigned*)(pt->jmpbuf+4)=0xFFFFFFC4;//-0x34
   *(unsigned short *)(pt->jmpbuf+8) = 0x25FF;
   *(unsigned long *)((char *)pt->jmpbuf + 10) = 0;
   *(uintptr_t *)((char *)pt->jmpbuf + 6+8) = (uintptr_t)trampoline;
