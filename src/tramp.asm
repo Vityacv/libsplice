@@ -159,7 +159,13 @@ trampoline:
 	mov [tsp+reg.hook],tcx
 	mov [tsp+reg.origFunc],tcx
 	mov tcx,tsp
+	%if __BITS__ == 64
+	sub rsp,32
+	%endif
 	call [tax+tramp.hookFunc]
+	%if __BITS__ == 64
+	add rsp,32
+	%endif
 	mov tcx,[tsp+reg.origFunc]
 	mov [tsp+reg.hook],tcx
 	mov tax,[tsp+reg.pt]
