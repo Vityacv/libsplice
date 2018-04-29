@@ -10,7 +10,6 @@ struct reg {
 	ptramp pt;
 	unsigned char state;
 	uintptr_t argcnt;
-	uintptr_t tflags;
 #ifdef _M_X64
 	uintptr_t r15;
 	uintptr_t r14;
@@ -28,6 +27,7 @@ struct reg {
 	uintptr_t tdx;
 	uintptr_t tcx;
 	uintptr_t tax;
+	uintptr_t tflags;
 	uintptr_t hook;
 	uintptr_t retadr;
 	uintptr_t v0;
@@ -55,7 +55,7 @@ struct tramp {
   unsigned origProtect; //original protection of page
   unsigned char codebuf[24]; //code buffer containing original code in most cases
 #if defined _M_X64
-  unsigned char jmpbuf[24]; //buffer of jump to hook function
+  unsigned char jmpbuf[28]; //buffer of jump to hook function
 #else
   unsigned char jmpbuf[14];
 #endif

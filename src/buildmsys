@@ -40,13 +40,14 @@ cd $obj
     $cppcomp -c $cfshared -include $src/pch.h $src/splice.c $src/splicealloc.c $src/dizahex.c
     nasm -f $arch $src/tramp.asm -o $obj/tramp.o
     $artool cr libsplice.a splice.o splicealloc.o dizahex.o tramp.o
-$cppcomp64 -o "test.exe" $cfshared -municode -mwindows -s -flto -fno-ident -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -mno-stack-arg-probe -fno-exceptions -Wl,-pic-executable,-high-entropy-va,-disable-runtime-pseudo-reloc,--major-os-version,6,--minor-os-version,1,--major-image-version,0,--minor-image-version,0,--major-subsystem-version,6,--minor-subsystem-version,1,-dynamicbase,-nxcompat,-eentry -nostdlib $subdir1/src/main.cpp $obj/libsplice.a -lmsvcrt -lkernel32 -luser32 -lmingw32
+$cppcomp -o "test.exe" $cfshared -municode -mwindows -mconsole -s -flto -fno-ident -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -mno-stack-arg-probe -fno-exceptions -Wl,-pic-executable,-high-entropy-va,-disable-runtime-pseudo-reloc,--major-os-version,6,--minor-os-version,1,--major-image-version,0,--minor-image-version,0,--major-subsystem-version,6,--minor-subsystem-version,1,-dynamicbase,-nxcompat,-e$testentry -nostdlib $subdir1/src/main.cpp $obj/libsplice.a -lmsvcrt -lkernel32 -luser32 -lmingw32
 }
 obj=$subdir1/obj64
 cppcomp=$cppcomp64
 ccomp=$ccomp64
 artool=$ar64
 arch=win64
+testentry=entry
 build $@
 
 obj=$subdir1/obj32
@@ -54,5 +55,6 @@ cppcomp=$cppcomp32
 ccomp=$ccomp32
 arch=win32
 artool=$ar32
+testentry=_entry
 build $@
 

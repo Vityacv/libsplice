@@ -178,17 +178,21 @@ unsigned char __fastcall spliceUp(void *hookPoint, void *hookFunc) {
 
 #if defined _M_X64
   rel32 = (((PBYTE)pt->jmpbuf - (PBYTE)hookPoint) - 5);
-  *(unsigned*)(pt->jmpbuf)=0x58d4850;
-  *(unsigned*)(pt->jmpbuf+4)=0xFFFFFFC4;//-0x34
-  *(unsigned short *)(pt->jmpbuf+8) = 0x25FF;
-  *(unsigned long *)((char *)pt->jmpbuf + 10) = 0;
-  *(uintptr_t *)((char *)pt->jmpbuf + 6+8) = (uintptr_t)trampoline;
+  //*(unsigned*)(pt->jmpbuf)=0x58d4850;
+  //*(unsigned*)(pt->jmpbuf+4)=0xFFFFFFC4;//-0x34
+  *(uintptr_t *)(pt->jmpbuf)=0x158D48E024548948;
+  *(uintptr_t *)(pt->jmpbuf+8)=0x000025FFFFFFFFC0;
+  
+  //*(unsigned short *)(pt->jmpbuf+8) = 0x25FF;
+  //*(unsigned long *)((char *)pt->jmpbuf + 13) = 0;
+  *(uintptr_t *)((char *)pt->jmpbuf + 18) = (uintptr_t)trampoline;
 #else
   rel32 = (((unsigned char *)pt->jmpbuf - (unsigned char *)hookPoint) - 5);
-  *(unsigned short *)(pt->jmpbuf)=0xb850;
-  *(uintptr_t*)(pt->jmpbuf+2)=(uintptr_t)pt;
-  *(pt->jmpbuf+6)=0xE9;
-  *(uintptr_t*)(pt->jmpbuf+7)=getRel4FromVal((pt->jmpbuf+7),trampoline);
+  *(unsigned *)(pt->jmpbuf)=0xF0245489;
+  *(unsigned char*)(pt->jmpbuf+4)=0xBA;
+  *(uintptr_t*)(pt->jmpbuf+5)=(uintptr_t)pt;
+  *(pt->jmpbuf+9)=0xE9;
+  *(uintptr_t*)(pt->jmpbuf+10)=getRel4FromVal((pt->jmpbuf+10),trampoline);
 #endif
   *(unsigned char *)(hookPoint) = 0xE8;
   *(unsigned *)((unsigned char *)hookPoint + 1) = rel32;

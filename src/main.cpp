@@ -39,6 +39,7 @@ extern "C" int entry() {
 
 
 unsigned __fastcall hookTest1(reg * p){
+	printf("tax: %p\ntcx: %p\ntdx: %p\nflags: %p\n",p->tax,p->tcx,p->tdx,p->tflags);
 	uintptr_t v0;
 	wchar_t * v1, * v2;
 	unsigned v3;
@@ -97,7 +98,7 @@ int __fastcall _tmain(int argc, TCHAR *argv[])
 				spliceUp((void *)MessageBoxW,(void *)hookTest1);
 				MessageBox(0,argv[0],L"test",0);
 				spliceDown((void *)MessageBoxW);
-				spliceUp((void *)((unsigned char *)MessageBoxW+0x13),(void *)hookTest2);
+				//spliceUp((void *)((unsigned char *)MessageBoxW+0x13),(void *)hookTest2);
 				MessageBox(0,argv[0],L"test",0);
 				freeSplice();
     return 0;
