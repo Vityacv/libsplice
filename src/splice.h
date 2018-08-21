@@ -64,7 +64,7 @@ struct tramp {
   ptramp next;
 };
 
-unsigned char __fastcall spliceUp(void *, void *);
+ptramp __fastcall spliceUp(void *, void *);
 unsigned char __fastcall spliceDown(void *);
 void __fastcall freeSplice();
 ptramp __fastcall getTramp(void *);

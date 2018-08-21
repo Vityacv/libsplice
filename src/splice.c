@@ -145,11 +145,12 @@ unsigned char __fastcall checkHookPoint(unsigned char *orig, ptramp pt,
   return 1;
 }
 
-unsigned char __fastcall spliceUp(void *hookPoint, void *hookFunc) {
+ptramp __fastcall spliceUp(void *hookPoint, void *hookFunc) {
   if (!hookPoint) return 0;
-  if(getTramp(hookPoint))
-    return 0;
-  ptramp pt = createTramp((unsigned char *)hookPoint);
+  ptramp pt = getTramp(hookPoint);
+  if(pt)
+    return pt;
+  pt = createTramp((unsigned char *)hookPoint);
   if (!pt) return 0;
   if (!checkHookPoint(0, pt, (unsigned char *)hookPoint)) {
     freeTramp(hookPoint);
@@ -198,6 +199,7 @@ unsigned char __fastcall spliceUp(void *hookPoint, void *hookFunc) {
   *(unsigned *)((unsigned char *)hookPoint + 1) = rel32;
   uintptr_t oldProtect;
   VirtualProtect((void *)hookPoint, 32, pt->origProtect, (LPDWORD)&oldProtect);
+  return pt;
 }
 unsigned char __fastcall spliceDown(void * hookPoint) {
   ptramp pt = getTramp(hookPoint);
