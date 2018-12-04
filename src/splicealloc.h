@@ -43,6 +43,41 @@ void   UninitializeBuffer(void);
 void * AllocateBuffer(void * pOrigin);
 void   FreeBuffer(void * pBuffer);
 unsigned char   IsExecutableAddress(void * pAddress);
+#ifndef _WIN32
+#define MEM_COMMIT           0x1000
+#define MEM_RESERVE          0x2000
+#define MEM_PRIVATE         0x20000
+#define MEM_RELEASE          0x8000
+#define MEM_FREE            0x10000
+#define PAGE_NOACCESS 0x01
+#define PAGE_READONLY 0x02
+#define PAGE_READWRITE 0x04
+#define PAGE_WRITECOPY 0x08
+#define PAGE_EXECUTE 0x10
+#define PAGE_EXECUTE_READ 0x20
+#define PAGE_EXECUTE_READWRITE 0x40
+#define PAGE_EXECUTE_WRITECOPY 0x80
+#define UINT8 uint8_t
+#define UINT uint32_t
+#define VOID void
+#define LPVOID void *
+#define DWORD uint32_t
+#define ULONG_PTR uintptr_t
+#define LPDWORD uint32_t *
+#define PBYTE uint8_t *
+char VirtualProtect(void * lpAddress, size_t dwSize, uint32_t flNewProtect,uint32_t * lpflOldProtect
+);
+#endif
+#ifdef __i386__
+#define page_shift 12
+#define user_space_limit    0x7fff0000  /* top of the user address space */
+#define address_space_start 0x110000    /* keep DOS area clear */
+#elif defined(__x86_64__)
+#define page_shift 12
+#define user_space_limit   0x7fffffff0000
+#define address_space_start 0x10000
+#endif
+
 #ifdef __cplusplus
 }
 #endif

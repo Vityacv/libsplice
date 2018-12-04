@@ -1,16 +1,16 @@
 #include "pch.h"
+#include "memory.h"
 #include "splice.h"
 #include "splicealloc.h"
 #include "dizahex.h"
-
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 ptramp trampGlobal;
-void __cdecl trampoline();
-uint32_t __fastcall getOpcodeLen(void *adr) {
+//void __cdecl trampoline();
+void trampoline();
+uint32_t regcall getOpcodeLen(void *adr) {
   DIZAHEX_STRUCT diza = {};
 #if defined _M_X64
   diza.mode = DISASM_MODE_64;
@@ -25,6 +25,7 @@ ptramp createTramp(unsigned char *hookPoint) {
   pt = (ptramp)AllocateBuffer(hookPoint);
   if (!pt) return nullptr;
   {
+
     if(!VirtualProtect((void *)hookPoint, 32, PAGE_EXECUTE_READWRITE, (LPDWORD)&pt->origProtect))
     	return nullptr;
   }
@@ -34,7 +35,7 @@ ptramp createTramp(unsigned char *hookPoint) {
   return pt;
 }
 
-void __fastcall freeTramp(void *hookPoint) {
+void regcall freeTramp(void *hookPoint) {
   ptramp pt = trampGlobal;
   ptramp prevpt = NULL;
   while (pt) {
@@ -51,7 +52,7 @@ void __fastcall freeTramp(void *hookPoint) {
   }
 }
 
-ptramp __fastcall getTramp(void * hookPoint) {
+ptramp regcall getTramp(void * hookPoint) {
   ptramp pt = trampGlobal;
   if (pt) {
     while (pt) {
@@ -62,7 +63,7 @@ ptramp __fastcall getTramp(void * hookPoint) {
   return 0;
 }
 
-unsigned __fastcall getTrampCount() {
+unsigned regcall getTrampCount() {
   ptramp pt = trampGlobal;
   unsigned i = 0;
   if (pt) {
@@ -74,17 +75,29 @@ unsigned __fastcall getTrampCount() {
   return i;
 }
 
-void __fastcall blockAllTramp() {
+void regcall blockAllTramp() {
   ptramp pt = trampGlobal;
   if (pt) {
     while (pt) {
       tramp *temp = pt->next;
       //if(IsExecutableAddress((void *)pt->hookPoint))
         uintptr_t oldProtect;
-        if(VirtualProtect((void *)pt->hookPoint, 32, PAGE_EXECUTE_READWRITE, (LPDWORD)&oldProtect))
+        if(VirtualProtect((void *)pt->hookPoint, 32, PAGE_EXECUTE_READWRITE, 
+        #ifdef _WIN32
+          (LPDWORD)&oldProtect
+          #else
+          0 //dont request for old protection value
+          #endif
+          ))
         {
       	   *(unsigned short *)(pt->hookPoint)=0xFEEB;
-           VirtualProtect((void *)pt->hookPoint, 32, pt->origProtect, (LPDWORD)&oldProtect);
+           VirtualProtect((void *)pt->hookPoint, 32, pt->origProtect,         
+           #ifdef _WIN32
+          (LPDWORD)&oldProtect
+          #else
+          0
+          #endif
+          );
         }
 
       pt = temp;
@@ -92,7 +105,7 @@ void __fastcall blockAllTramp() {
   }
 }
 
-void __fastcall freeAllTramp() {
+void regcall freeAllTramp() {
   ptramp pt = trampGlobal;
   if (pt) {
     while (pt) {
@@ -104,14 +117,14 @@ void __fastcall freeAllTramp() {
   }
 }
 
-void __fastcall freeSplice(){
+void regcall freeSplice(){
   while(getTrampCount()){
         blockAllTramp();
         freeAllTramp();
       }
 }
 
-unsigned char __fastcall checkHookPoint(unsigned char *orig, ptramp pt,
+unsigned char regcall checkHookPoint(unsigned char *orig, ptramp pt,
                                         unsigned char *hookPoint) {
   unsigned origLen = 0;
 
@@ -125,7 +138,28 @@ unsigned char __fastcall checkHookPoint(unsigned char *orig, ptramp pt,
       unsigned char *dest = (hookPoint + 5) + *(unsigned *)(hookPoint + 1);
       unsigned offs = dest - (orig + origLen + 5);
       *(unsigned *)(pt->codebuf + origLen + 1) = offs;
-    } else {
+    }
+    #ifdef _M_X64
+    else if(7 == len && (0x8D48 == *(uint16_t *)hookPoint)){//lea x,[rip+x]
+      *(uint32_t*)&pt->codebuf[origLen] = *(uint32_t*)hookPoint;
+      unsigned char *dest = (hookPoint + 7) + *(unsigned *)(hookPoint + 3);
+      unsigned offs = dest - (orig + origLen + 7);
+      *(unsigned *)(pt->codebuf + origLen + 3) = offs;
+    }
+    else if(6 == len && (0x8B == *(uint8_t *)hookPoint || 0x15FF == *(uint16_t *)hookPoint || 0x25FF == *(uint16_t *)hookPoint)){//mov x,[rip+x] & call [x]
+      *(uint16_t*)&pt->codebuf[origLen] = *(uint16_t*)hookPoint;
+      unsigned char *dest = (hookPoint + 6) + *(unsigned *)(hookPoint + 2);
+      unsigned offs = dest - (orig + origLen + 6);
+      *(unsigned *)(pt->codebuf + origLen + 2) = offs;
+    }/*else if(6 == len && (0x25FF == *(uint16_t *)hookPoint)){// jmp [x]
+      *(uint16_t*)&pt->codebuf[origLen] = *(uint16_t*)hookPoint;
+      unsigned char *dest = (hookPoint + 6) + *(unsigned *)(hookPoint + 2);
+      hookPoint=(unsigned char*)*(uintptr_t*)dest;
+      origLen=0;
+      continue;
+    }*/
+    #endif
+     else {
       if (1 == len && (0xC3 == *hookPoint || 0xCB == *hookPoint) &&
           origLen + 1 < 5)
         return 0;
@@ -145,7 +179,7 @@ unsigned char __fastcall checkHookPoint(unsigned char *orig, ptramp pt,
   return 1;
 }
 
-ptramp __fastcall spliceUp(void *hookPoint, void *hookFunc) {
+ptramp regcall spliceUp(void *hookPoint, void *hookFunc) {
   if (!hookPoint) return 0;
   ptramp pt = getTramp(hookPoint);
   if(pt)
@@ -182,8 +216,7 @@ ptramp __fastcall spliceUp(void *hookPoint, void *hookFunc) {
   //*(unsigned*)(pt->jmpbuf)=0x58d4850;
   //*(unsigned*)(pt->jmpbuf+4)=0xFFFFFFC4;//-0x34
   *(uintptr_t *)(pt->jmpbuf)=0x158D48E024548948;
-  *(uintptr_t *)(pt->jmpbuf+8)=0x000025FFFFFFFFC0;
-  
+  *(uintptr_t *)(pt->jmpbuf+8)=0x000025FFFFFFFFba;
   //*(unsigned short *)(pt->jmpbuf+8) = 0x25FF;
   //*(unsigned long *)((char *)pt->jmpbuf + 13) = 0;
   *(uintptr_t *)((char *)pt->jmpbuf + 18) = (uintptr_t)trampoline;
@@ -201,21 +234,33 @@ ptramp __fastcall spliceUp(void *hookPoint, void *hookFunc) {
   VirtualProtect((void *)hookPoint, 32, pt->origProtect, (LPDWORD)&oldProtect);
   return pt;
 }
-unsigned char __fastcall spliceDown(void * hookPoint) {
+unsigned char regcall spliceDown(void * hookPoint) {
   ptramp pt = getTramp(hookPoint);
   if(!pt)
   	return 0;
   //if(IsExecutableAddress((void *)hookPoint)){
   {
   uintptr_t oldProtect;
-  if(VirtualProtect((void *)hookPoint, 32, PAGE_EXECUTE_READWRITE, (LPDWORD)&oldProtect)){
+  if(VirtualProtect((void *)hookPoint, 32, PAGE_EXECUTE_READWRITE,         
+  #ifdef _WIN32
+          (LPDWORD)&oldProtect
+          #else
+          0
+          #endif
+          )){
     checkHookPoint((unsigned char*)hookPoint, pt,(unsigned char*)pt->codebuf);
     memcpy(hookPoint, pt->codebuf, pt->origLen);
-    VirtualProtect((void *)hookPoint, 32, pt->origProtect, (LPDWORD)&oldProtect);
+    VirtualProtect((void *)hookPoint, 32, pt->origProtect,         
+    #ifdef _WIN32
+          (LPDWORD)&oldProtect
+          #else
+          0
+          #endif
+          );
   }
   }
   freeTramp(hookPoint);
-  return TRUE;
+  return 1;
 }
 
 #ifdef __cplusplus

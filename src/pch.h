@@ -2,9 +2,13 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#ifdef _WIN32
 #include <tchar.h>
 #include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-//#include <intrin.h>
-//#include <winternl.h>
+#else
+#include <sys/mman.h>
+#include <sys/stat.h> 
+#include <fcntl.h>
+#include <unistd.h>
+#endif

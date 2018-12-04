@@ -3,6 +3,10 @@
 extern "C" {
 #endif
 
+#ifndef _WIN32
+#define _M_X64
+#endif
+
 typedef struct tramp *ptramp;
 
 struct reg {
@@ -53,7 +57,7 @@ struct tramp {
   unsigned char *hookFunc; //function to execute
   unsigned char *origFunc; //need for custom codebuf
   unsigned origProtect; //original protection of page
-  unsigned char codebuf[24]; //code buffer containing original code in most cases
+  unsigned char codebuf[30]; //code buffer containing original code in most cases
 #if defined _M_X64
   unsigned char jmpbuf[28]; //buffer of jump to hook function
 #else
@@ -64,16 +68,22 @@ struct tramp {
   ptramp next;
 };
 
-ptramp __fastcall spliceUp(void *, void *);
-unsigned char __fastcall spliceDown(void *);
-void __fastcall freeSplice();
-ptramp __fastcall getTramp(void *);
-unsigned __fastcall getTrampCount();
-uint32_t __fastcall getOpcodeLen(void *adr);
-unsigned char __fastcall checkHookPoint(unsigned char *orig, ptramp pt,
+ptramp regcall spliceUp(void *, void *);
+unsigned char regcall spliceDown(void *);
+void regcall freeSplice();
+ptramp regcall getTramp(void *);
+unsigned regcall getTrampCount();
+uint32_t regcall getOpcodeLen(void *adr);
+unsigned char regcall checkHookPoint(unsigned char *orig, ptramp pt,
                                         unsigned char *hookPoint);
-#define getVal4FromRel(x) (unsigned char *)x+(*(uintptr_t *)((unsigned char *)x))+4
+#ifdef _M_X64
+#define getVal4FromRel(x) (unsigned char *)x+(*(uint32_t *)((unsigned char *)x)>0x7FFFFFFF?0xFFFFFFFF00000000|*(uint32_t *)((unsigned char *)x):*(uint32_t *)((unsigned char *)x))+4
+#else
+#define getVal4FromRel(x) (unsigned char *)x+(*(uint32_t *)((unsigned char *)x))+4
+#endif
 #define getRel4FromVal(x,y) ((unsigned char *)y-(unsigned char *)x)-4
+
+
 #ifdef __cplusplus
 }
 #endif
